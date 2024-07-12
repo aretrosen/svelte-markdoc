@@ -47,9 +47,11 @@ export type TOCItem = {
 
 export type NodeWithName = Node & { name?: string };
 
+let highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>> | undefined;
+
 export class MarkdocX {
 	private slugs: Map<string, number>;
-	private highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>>;
+	// private highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>>;
 	private shikiCache: Map<string, any>;
 	private themes;
 	private imagePrefix: string;
@@ -67,7 +69,7 @@ export class MarkdocX {
 		this.shikiCache = new Map<string, string>();
 		this.frontmatter = {};
 		this.themes = 'themes' in config ? config.themes : { light: config.theme };
-		this.highlighter = createHighlighter({
+		highlighter ??= createHighlighter({
 			themes: Object.values(this.themes),
 			langs: config.langs ?? Object.keys(bundledLanguages)
 		});
@@ -243,8 +245,8 @@ export class MarkdocX {
 				: [node.attributes.content];
 
 			const { language, content } = node.attributes;
-			const highlighter = await this.highlighter;
-			const langs = highlighter.getLoadedLanguages();
+			const shikiHighlighter = await highlighter;
+			const langs = shikiHighlighter!.getLoadedLanguages();
 			if (!langs.includes(language)) {
 				return new Markdoc.Tag('pre', attributes, children);
 			}
@@ -253,7 +255,7 @@ export class MarkdocX {
 				return cachedValue;
 			}
 
-			const hastHighlight = highlighter.codeToHast(content, {
+			const hastHighlight = shikiHighlighter!.codeToHast(content, {
 				lang: language,
 				themes: this.themes
 			});

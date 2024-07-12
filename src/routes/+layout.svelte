@@ -1,11 +1,12 @@
 <script lang="ts">
-  let { children } = $props()
+	import '../app.css';
+	let { children } = $props();
 </script>
 
 <svelte:head>
-  <title>Markdoc</title>
+	<title>Markdoc</title>
 </svelte:head>
 
-<main>
-  {@render children()}
+<main class="flex flex-col items-center justify-center gap-y-6">
+	{@render children()}
 </main>
