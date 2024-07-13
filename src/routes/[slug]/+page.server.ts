@@ -51,8 +51,8 @@ async function markdoc(slug: string) {
 		toc,
 		readingTime:
 			readingTimeMin === 0
-				? 'less than a min.'
-				: `${readingTimeMin} min${readingTimeMin === 1 ? '' : 's'}.`
+				? 'less than a min. read'
+				: `${readingTimeMin} min${readingTimeMin === 1 ? '' : 's'}. read`
 	};
 }
 

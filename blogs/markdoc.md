@@ -27,9 +27,9 @@ Markdoc uses a fully declarative approach to composition and flow control, where
 - [Install Markdoc](/docs/getting-started)
 - [Explore the syntax](/docs/syntax)
 
-## 10 &&&&$ -+Special----reasons to_leran.&^-----markdown-----
+## 10 &&&&$ -+Special----reasons to_learn.&^-----markdown-----(checking special chars)
 
-#### I shouldn't do this at all
+#### I shouldn't do this at all - (levels don't match, but that works!)
 
 ## Check again?
 
@@ -45,7 +45,7 @@ int main() {
 ```
 
 ```js
-console.log("Hello World");
+console.log('Hello World');
 ```
 
 ```python
@@ -53,11 +53,11 @@ print("Hello World")
 ```
 
 ```js
-console.log("Hi World");
+console.log('Hi World');
 ```
 
-![wallpaper](wallpaper.jpg "Good Wallpaper")![wallpaper](wallpaper.jpg "Good Wallpaper")
+![wallpaper](wallpaper.jpg 'Good Wallpaper')![wallpaper](wallpaper.jpg 'Good Wallpaper')
 
 # Why Then?
 
-Why? Just checking. This is `markdown` ![wallpaper](wallpaper.jpg "Good Wallpaper")
+Why? Just checking. This is `markdown` ![wallpaper](wallpaper.jpg 'Good Wallpaper')

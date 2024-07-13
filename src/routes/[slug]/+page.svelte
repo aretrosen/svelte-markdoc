@@ -10,6 +10,7 @@
 >
 	<Toc headings={data.toc} />
 </div>
+<aside class="fixed top-1/2 left-4">{data.readingTime}</aside>
 <div class="prose flex flex-col w-full px-2 max-w-screen-lg">
 	<MarkdocRenderer children={JSON.parse(data.children)} />
 </div>

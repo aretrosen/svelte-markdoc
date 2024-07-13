@@ -51,7 +51,6 @@ let highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>> | un
 
 export class MarkdocX {
 	private slugs: Map<string, number>;
-	// private highlighter: Promise<HighlighterGeneric<BundledLanguage, BundledTheme>>;
 	private shikiCache: Map<string, any>;
 	private themes;
 	private imagePrefix: string;
@@ -142,13 +141,14 @@ export class MarkdocX {
 		if (attributes.id && typeof attributes.id === 'string') {
 			return attributes.id;
 		}
-		const slug = children
-			.filter((child) => typeof child === 'string')
-			.join('-')
-			.toLowerCase()
-			.replace(/^[^a-z]+|[^a-z0-9_]+/g, (match, offset) => (offset === 0 ? '' : '-'))
-			.replace(/-{2,}/g, '-')
-			.replace(/^-+|-+$/g, '');
+		const slug =
+			children
+				.filter((child) => typeof child === 'string')
+				.join('-')
+				.toLowerCase()
+				.replace(/^[^a-z]+|[^a-z0-9_]+/g, (match, offset) => (offset === 0 ? '' : '-'))
+				.replace(/-{2,}/g, '-')
+				.replace(/^-+|-+$/g, '') || 'empty';
 
 		const count = this.slugs.get(slug) ?? 0;
 		const finalSlug = count ? `${slug}-${count}` : slug;
