@@ -13,29 +13,31 @@ import {
 // TODO: check if shiki plugin can be hooked up later
 // import Shiki from '@shikijs/markdown-it';
 
-export function hastToMarkdocTag(root: Root) {
-	function traverse(node: Root | Element | Text) {
+export function hastToMarkdocTag(root: Root): RenderableTreeNode | RenderableTreeNode[] {
+	const stack: [Root | Element | Text, RenderableTreeNode[]][] = [[root, []]];
+	let result: RenderableTreeNode | RenderableTreeNode[] = [];
+
+	while (stack.length > 0) {
+		const [node, parentChildren] = stack.pop()!;
+
 		if (node.type === 'element') {
 			const children: RenderableTreeNode[] = [];
-			for (const nchild of node.children) {
-				const child = traverse(nchild as Root | Element | Text);
-				if (child) {
-					children.push(child);
-				}
+			const tag = new Markdoc.Tag(node.tagName, node.properties, children);
+			parentChildren.push(tag);
+
+			for (let i = node.children.length - 1; i >= 0; i--) {
+				stack.push([node.children[i] as Root | Element | Text, children]);
 			}
-			return new Markdoc.Tag(node.tagName, node.properties, children);
 		} else if (node.type === 'text') {
-			return node.value;
+			parentChildren.push(node.value);
+		} else if (node.type === 'root') {
+			for (let i = node.children.length - 1; i >= 0; i--) {
+				stack.push([node.children[i] as Root | Element | Text, result as RenderableTreeNode[]]);
+			}
 		}
 	}
-	if (root.type == 'root') {
-		const children = [];
-		for (const child of root.children) {
-			children.push(traverse(child as Root | Element | Text));
-		}
-		return children.length === 1 ? children[0] : children;
-	}
-	return traverse(root);
+
+	return root.type === 'root' && result.length === 1 ? result[0] : result;
 }
 
 export type TOCItem = {
@@ -157,43 +159,44 @@ export class MarkdocX {
 	}
 
 	// TODO: do i unwrap images when the only thing separating them is a newline or not?
-	public unwrapImages(node: NodeWithName) {
-		if (node && node.children) {
-			let i = 0;
-			while (i < node.children.length) {
-				const child = node.children[i];
-				if (
-					(child as NodeWithName).name === 'p' &&
-					child.children.every(
-						(element: any) => element instanceof Markdoc.Tag && element.name === 'img'
-					)
-				) {
-					const imageCount = child.children.length;
-					node.children.splice(i, 1, ...child.children);
-					i += imageCount;
-				} else {
-					this.unwrapImages(child as NodeWithName);
-					i++;
+	public unwrapImages(root: NodeWithName) {
+		const stack = [root];
+		while (stack.length > 0) {
+			const node = stack.pop();
+			if (node?.children) {
+				for (let i = node.children.length - 1; i >= 0; i--) {
+					const child = node.children[i];
+					if (
+						(child as NodeWithName).name === 'p' &&
+						child.children.every(
+							(element: any) => element instanceof Markdoc.Tag && element.name === 'img'
+						)
+					) {
+						node.children.splice(i, 1, ...child.children);
+					} else {
+						stack.push(child as NodeWithName);
+					}
 				}
 			}
 		}
 	}
 
-	public readingTime(node: NodeWithName, wpm = 200, round = true) {
+	public readingTime(root: NodeWithName, wpm = 200, round = true) {
 		const parts: string[] = [];
-		function toText(node: NodeWithName) {
-			if (node) {
-				if (typeof node === 'string') {
-					parts.push(node);
-				}
-				if (node.children) {
-					for (const child of node.children) {
-						toText(child as NodeWithName);
-					}
+		const stack = [root];
+
+		while (stack.length > 0) {
+			const node = stack.pop();
+			if (typeof node === 'string') {
+				parts.push((node as string).trim());
+			}
+			if (node?.children) {
+				for (let i = node.children.length - 1; i >= 0; i--) {
+					stack.push(node.children[i] as NodeWithName);
 				}
 			}
 		}
-		toText(node);
+
 		const text = parts.join(' ');
 		const wordCount = (text.match(/\b[\p{L}\p{N}'-]+\b/gu) || []).length;
 		if (round) {
@@ -266,49 +269,51 @@ export class MarkdocX {
 		}
 	};
 
-	public getTOC(node: NodeWithName, minLevel = 1, maxLevel = 6): TOCItem[] {
+	public getTOC(root: NodeWithName, minLevel = 1, maxLevel = 6): TOCItem[] {
 		const result: TOCItem[] = [];
-		const stack: TOCItem[] = [];
+		const stack = [root];
+		const tocstack: TOCItem[] = [];
 
-		function traverse(node: NodeWithName) {
-			if (node && node.name) {
+		while (stack.length > 0) {
+			const node = stack.pop();
+			if (node?.name) {
 				const level = parseInt(node.name.slice(1));
-				if (!isNaN(level) && node.name[0] === 'h' && level >= minLevel && level <= maxLevel) {
+				if (!isNaN(level) && node.name.startsWith('h') && level >= minLevel && level <= maxLevel) {
 					const title = node.children[0];
 					if (typeof title === 'string') {
 						const item: Omit<TOCItem, 'id'> = {
 							...node.attributes,
 							title
 						};
-						while (stack.length >= level - minLevel + 1) {
-							const popped = stack.pop()!;
-							if (popped.headings?.length === 0) {
-								delete popped.headings;
+						while (tocstack.length > level - minLevel) {
+							const lasthead = tocstack.pop();
+							if (lasthead?.headings?.length === 0) {
+								delete lasthead.headings;
 							}
 						}
-						if (stack.length === 0) {
+						if (tocstack.length === 0) {
 							result.push(item as TOCItem);
 						} else {
-							stack[stack.length - 1].headings ??= [];
-							stack[stack.length - 1].headings!.push(item as TOCItem);
+							tocstack.at(-1)!.headings ??= [];
+							tocstack.at(-1)!.headings!.push(item as TOCItem);
 						}
-						stack.push(item as TOCItem);
+						tocstack.push(item as TOCItem);
 					}
 				}
 			}
-			if (node.children) {
-				for (const child of node.children) {
-					traverse(child as NodeWithName);
+			if (node?.children) {
+				for (let i = node.children.length - 1; i >= 0; --i) {
+					if (typeof node.children[i] !== 'string') {
+						stack.push(node.children[i]);
+					}
 				}
 			}
 		}
 
-		traverse(node);
-
-		while (stack.length > 0) {
-			const item = stack.pop()!;
-			if (item.headings?.length === 0) {
-				delete item.headings;
+		while (tocstack.length > 0) {
+			const lasthead = tocstack.pop();
+			if (lasthead?.headings?.length === 0) {
+				delete lasthead.headings;
 			}
 		}
 
