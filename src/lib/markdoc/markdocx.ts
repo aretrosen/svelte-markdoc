@@ -264,6 +264,8 @@ export class MarkdocX {
 			});
 
 			const tagHighlight = hastToMarkdocTag(hastHighlight);
+			// @ts-ignore
+			tagHighlight?.children.unshift(new Markdoc.Tag('CopyCode'));
 			this.shikiCache.set(content, tagHighlight);
 			return tagHighlight;
 		}

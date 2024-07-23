@@ -38,9 +38,6 @@ async function markdoc(slug: string) {
 	const toc = markdocx.getTOC(content);
 	// @ts-ignore
 	const readingTimeMin = markdocx.readingTime(content);
-	// notice: here, though transforming is what is needed, but typescript doesn't give a fuck
-	// whether I am transforming a constant. That's why people say js is dangerous.
-
 	// @ts-ignore
 	markdocx.unwrapImages(content);
 
