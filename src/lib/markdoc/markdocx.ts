@@ -247,7 +247,17 @@ export class MarkdocX {
 				? node.transformChildren(config)
 				: [node.attributes.content];
 
-			const { language, content } = node.attributes;
+			let { language, content } = node.attributes;
+			const languageParts = language.split(':');
+			const meta: Record<string, string> = { __raw: languageParts.slice(1).join(' ') };
+			for (let i = languageParts.length - 1; i >= 1; --i) {
+				const [key, value] = languageParts.at(i).split('=');
+				if (value) {
+					meta[key] = decodeURIComponent(value);
+				}
+			}
+			language = languageParts.at(0);
+
 			const shikiHighlighter = await highlighter;
 			const langs = shikiHighlighter!.getLoadedLanguages();
 			if (!langs.includes(language)) {
@@ -260,12 +270,13 @@ export class MarkdocX {
 
 			const hastHighlight = shikiHighlighter!.codeToHast(content, {
 				lang: language,
-				themes: this.themes
+				themes: this.themes,
+				meta: meta
 			});
 
 			const tagHighlight = hastToMarkdocTag(hastHighlight);
 			// @ts-ignore
-			tagHighlight?.children.unshift(new Markdoc.Tag('CopyCode'));
+			tagHighlight?.children.unshift(new Markdoc.Tag('CopyCode', { meta: meta }));
 			this.shikiCache.set(content, tagHighlight);
 			return tagHighlight;
 		}
