@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Markdoc from '@markdoc/markdoc';
 	import Callout from './components/callout.svelte';
 	import Counter from './components/counter.svelte';
 	import CopyCode from './components/copycode.svelte';
@@ -29,16 +28,7 @@
 {#each children as child}
 	{#if typeof child === 'string' || typeof child === 'number'}
 		{child.toString()}
-	{/if}
-
-	<!-- {#if child.name === 'img'}
-		<enhanced:img
-			{...child.attributes}
-			sizes="(min-width:1920px) 1280px, (min-width:1080px) 640px, (min-width:768px) 400px"
-			fetchpriority="high"
-			loading="eager"
-		></enhanced:img> -->
-	{#if voidElements.has(child.name)}
+	{:else if voidElements.has(child.name)}
 		<svelte:element this={child.name} {...child.attributes} />
 	{:else if components[child.name]}
 		<svelte:component this={components[child.name]} {...child.attributes}>
@@ -50,5 +40,3 @@
 		</svelte:element>
 	{/if}
 {/each}
-
-<!-- {@html Markdoc.renderers.html(children)} -->
